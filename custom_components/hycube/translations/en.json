@@ -1,0 +1,16 @@
+{
+    "config": {
+        "title": "Add Hycube",
+        "step": {
+            "user": {
+                "title": "Hycube Setup",
+                "data": {
+                    "name": "Name of the Hycube system",
+                    "host": "Hostname or IP-Address in the local network"
+                }
+            }
+        },
+        "abort": {
+        }
+    }
+}

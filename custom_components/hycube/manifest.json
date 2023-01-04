@@ -1,0 +1,16 @@
+{
+  "domain": "hycube",
+  "name": "HyCube",
+  "version": "0.0.1",
+  "documentation": "https://github.com/fblaese/hass-hycube",
+  "issue_tracker": "https://github.com/fblaese/hass-hycube/issues",
+  "iot_class": "local_polling",
+  "config_flow": true,
+  "dependencies": [],
+  "codeowners": [
+    "@fblaese"
+  ],
+  "requirementss": [
+    "pyhycube==0.0.1"
+  ]
+}
