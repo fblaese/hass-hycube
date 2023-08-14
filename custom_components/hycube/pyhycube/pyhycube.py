@@ -72,7 +72,6 @@ class HycubeGrid:
 		return
 
 	def parseData(self, getValues):
-		self.soc = getValues.get('Battery_C')
 		self.p = getValues.get('Grid_P')
 		self.u1 = getValues.get('Grid_V_L1')
 		self.u2 = getValues.get('Grid_V_L2')
@@ -101,21 +100,93 @@ class HycubeWallbox:
 	id: int
 	p: float
 	connection: bool
-	block: bool
+	lock: bool
 	booster: bool
+	carConnected: bool
+	carChargingRequest: bool
+	chargingMode: int
+	minChargingPower: int
+	minSolarPower: int
+	allowBatDischarging: bool
+	phaseCount: int
+	chargingPriority: int
+	houseMaxFuse: int
+	wallboxMaxFuse: int
+	name: str
+	endpoint: str
 
-	def __init__(self):
-		return
+	def __init__(self, endpoint: str):
+		self.endpoint = endpoint
 
-	def parseData(self, id, dataRow):
+	def parseData(self, id, dataRow, wallboxGetSettings):
 		self.id = id
 
 		self.p = dataRow.get('wallbox' + str(id) + '_power')
 		self.connection = dataRow.get('wallbox' + str(id) + '_connection')
-		self.block = dataRow.get('wallbox' + str(id) + '_blockCharging')
+		self.lock = dataRow.get('wallbox' + str(id) + '_blockCharging')
 		self.booster = dataRow.get('wallbox' + str(id) + '_boosterState')
 
+		value = dataRow.get('wallbox' + str(id) + '_state')
+		if value >= 4 and value <= 7:
+			self.carConnected = True
+		else:
+			self.carConnected = False
+
+		value = dataRow.get('wallbox' + str(id) + '_state')
+		if value == 6 or value == 7:
+			self.carChargingRequest = 1
+		else:
+			self.carChargingRequest = 0
+
+		self.chargingMode = wallboxGetSettings.get('wallboxSettings').get('Wallbox' + str(id)).get('chargingMode')
+		self.minChargingPower = wallboxGetSettings.get('wallboxSettings').get('Wallbox' + str(id)).get('minChargingPower')
+		self.minSolarPower = wallboxGetSettings.get('wallboxSettings').get('Wallbox' + str(id)).get('minSolarPower')
+		self.allowBatDischarging = wallboxGetSettings.get('wallboxSettings').get('Wallbox' + str(id)).get('allowBatDischarging')
+
+		phaseCount = wallboxGetSettings.get('wallboxSettings').get('Wallbox' + str(id)).get('phase')
+		if phaseCount == 0:
+			self.phaseCount = 3
+		else:
+			self.phaseCount = phaseCount
+
+		self.chargingPriority = wallboxGetSettings.get('wallboxSettings').get('Wallbox' + str(id)).get('chargingPriority')
+		self.houseMaxFuse = wallboxGetSettings.get('wallboxSettings').get('Wallbox' + str(id)).get('houseMaxFuse')
+		self.wallboxMaxFuse = wallboxGetSettings.get('wallboxSettings').get('Wallbox' + str(id)).get('wallboxMaxFuse')
+		self.name = wallboxGetSettings.get('wallboxSettings').get('Wallbox' + str(id)).get('Name')
+
 		return self
+
+	def setLock(self, value: bool):
+		request = requests.get("http://%s/Wallbox/setBlockCharging/?wallbox=%d&value=%d" % (self.endpoint, self.id, int(value)), timeout=1)
+
+	def setBooster(self, value: bool):
+		request = requests.get("http://%s/Wallbox/booster/?wallbox=%d&value=%d" % (self.endpoint, self.id, int(value)), timeout=1)
+
+	def setChargingMode(self, value: int):
+		if value < 0 or value > 2:
+			# TODO: throw error
+			return
+
+		request = requests.get("http://%s/Wallbox/setWallboxMode/?wallbox=%d&mode=%d" % (self.endpoint, self.id, value), timeout=1)
+
+	def setChargingPriority(self, value: bool):
+		request = requests.get("http://%s/Wallbox/setPriority/?wallbox=%d&mode=%d" % (self.endpoint, self.id, int(value)), timeout=1)
+
+	def setAllowBatDischarging(self, value: bool):
+		request = requests.get("http://%s/Wallbox/batteryDischargingPermission/?wallbox=%d&mode=%d" % (self.endpoint, self.id, int(value)), timeout=1)
+
+	def setMinChargingPower(self, value: int):
+		request = requests.get("http://%s/Wallbox/setWallboxMode/?wallbox=%d&mode=1&minChargingPower=%d&minSolarPower=%d" % (self.endpoint, self.id, value, self.minSolarPower), timeout=1)
+	
+	def setMinSolarPower(self, value: int):
+		request = requests.get("http://%s/Wallbox/setWallboxMode/?wallbox=%d&mode=1&minChargingPower=%d&minSolarPower=%d" % (self.endpoint, self.id, self.minChargingPower, value), timeout=1)
+
+	def setWallboxMaxFuse(self, value: int):
+		request = requests.get("http://%s/Wallbox/setWallboxMaxFuse/?wallbox=%d&value=%d" % (self.endpoint, self.id, value), timeout=1)
+	
+	def setHomeMaxFuse(self, value: int):
+		request = requests.get("http://%s/Wallbox/setHomeMaxFuse/?wallbox=%d&value=%d" % (self.endpoint, self.id, value), timeout=1)
+
 
 @dataclass
 class HycubeSolar:
@@ -148,6 +219,9 @@ class Hycube:
 	machine: str
 	serial: str
 	type: str
+	controller: str
+	version_hyweb: str
+	version_cubeconnect: str
 
 	battery: HycubeBattery
 	grid: HycubeGrid
@@ -176,8 +250,8 @@ class Hycube:
 		request = requests.get("http://%s/info/" % self.endpoint, timeout=1)
 		self.__info = request.json()
 
-		request = requests.get("http://%s/info/" % self.endpoint, timeout=1)
-		self.__info = request.json()
+		request = requests.get("http://%s/Wallbox/getSettings/" % self.endpoint, timeout=1)
+		self.__wallboxGetSettings = request.json()
 
 		request = requests.get("http://%s/auth/" % self.endpoint, timeout=1, headers={"Authorization": base64.b64encode(b'Basic hycube:hycube')})
 		auth = request.content
@@ -199,14 +273,17 @@ class Hycube:
 		self.machine = self.__info.get('HYCUBE_MACHINE')
 		self.serial = self.__info.get('HYCUBE_SERIAL')
 		self.type = self.__info.get('HYCUBE_TYPE')
+		self.controller = self.__info.get('HYCUBE_CONTROLLER')
+		self.version_hyweb = self.__info.get('HyWeb_Version')
+		self.version_cubeconnect = self.__info.get('CubeConnect_Version')
 
 		self.battery = HycubeBattery().parseData(self.__dataRow, self.__getValues, self.__plantCheck)
 		self.grid = HycubeGrid().parseData(self.__getValues)
 		self.inverter = HycubeInverter().parseData(self.__getValues)
 		self.home = HycubeHome().parseData(self.__getValues)
-		self.wallbox1 = HycubeWallbox().parseData(1, self.__dataRow)
-		self.wallbox2 = HycubeWallbox().parseData(2, self.__dataRow)
-		self.wallbox3 = HycubeWallbox().parseData(3, self.__dataRow)
+		self.wallbox1 = HycubeWallbox(self.endpoint).parseData(1, self.__dataRow, self.__wallboxGetSettings)
+		self.wallbox2 = HycubeWallbox(self.endpoint).parseData(2, self.__dataRow, self.__wallboxGetSettings)
+		self.wallbox3 = HycubeWallbox(self.endpoint).parseData(3, self.__dataRow, self.__wallboxGetSettings)
 		self.solar = HycubeSolar().parseData(self.__getValues)
 
 	def printStatus(self):

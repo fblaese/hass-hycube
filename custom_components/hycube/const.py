@@ -1,1 +1,2 @@
 DOMAIN = "hycube"
+DEFAULT_SCAN_INTERVAL = 10

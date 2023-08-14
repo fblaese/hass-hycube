@@ -6,7 +6,8 @@
                 "title": "Hycube Setup",
                 "data": {
                     "name": "Name of the Hycube system",
-                    "host": "Hostname or IP-Address in the local network"
+                    "host": "Hostname or IP-Address in the local network",
+                    "scan_interval": "Scan Interval"
                 }
             }
         },

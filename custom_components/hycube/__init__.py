@@ -37,6 +37,8 @@ async def async_setup(hass: core.HomeAssistant, config: dict) -> bool:
 
     _LOGGER.debug("async_setup")
 
+    hass.data[DOMAIN] = {}
+
     return True
 
 async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry) -> bool:
@@ -51,10 +53,15 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry) -> boo
     api = Hycube(entry.data[CONF_HOST])
     coordinator = ApiCoordinator(hass, api)
 
+    hass.data[DOMAIN][entry.entry_id] = {}
+    hass.data[DOMAIN][entry.entry_id]["api"] = api
+    hass.data[DOMAIN][entry.entry_id]["coordinator"] = coordinator
+
     await coordinator.async_refresh()
 
     serial = api.serial
     model = api.type
+    sw_version = api.version_cubeconnect
 
     device_registry = dr.async_get(hass)
 
@@ -63,13 +70,25 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry) -> boo
         #connections = {(dr.CONNECTION_NETWORK_MAC, config.mac)},
         identifiers = {(DOMAIN, serial)},
         manufacturer = "Hycube",
-        name = name,
+        name = "System Controller",
         model = model,
-        #sw_version = config.swversion,
+        sw_version = sw_version,
     )
 
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(entry, "sensor")
+    )
+
+    hass.async_create_task(
+        hass.config_entries.async_forward_entry_setup(entry, "binary_sensor")
+    )
+
+    hass.async_create_task(
+        hass.config_entries.async_forward_entry_setup(entry, "lock")
+    )
+
+    hass.async_create_task(
+        hass.config_entries.async_forward_entry_setup(entry, "number")
     )
 
     return True
