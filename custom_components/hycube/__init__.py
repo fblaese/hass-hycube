@@ -57,7 +57,7 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry) -> boo
     hass.data[DOMAIN][entry.entry_id]["api"] = api
     hass.data[DOMAIN][entry.entry_id]["coordinator"] = coordinator
 
-    await coordinator.async_refresh()
+    await coordinator.async_config_entry_first_refresh()
 
     serial = api.serial
     model = api.type
