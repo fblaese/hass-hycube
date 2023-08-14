@@ -32,7 +32,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     entries.append(HycubeBinarySensor(api, coordinator, device, 'wallbox3.carConnected', 'Car Connected'))
     entries.append(HycubeBinarySensor(api, coordinator, device, 'wallbox3.carChargingRequest', 'Car Charging Request'))
 
-    async_add_entities(entries)
+    async_add_entities(entries, update_before_add=True)
 
 
 class HycubeBinarySensor(CoordinatorEntity, BinarySensorEntity):

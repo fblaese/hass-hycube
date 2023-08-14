@@ -66,7 +66,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     entries.append(HycubeSensor(api, coordinator, device, 'battery.i', 'Current', ELECTRIC_CURRENT_AMPERE, 2))
     entries.append(HycubeSensor(api, coordinator, device, 'battery.t', 'Temperature', TEMP_CELSIUS, 1))
 
-    async_add_entities(entries)
+    async_add_entities(entries, update_before_add=True)
 
 
 class HycubeSensor(CoordinatorEntity, SensorEntity):

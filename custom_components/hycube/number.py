@@ -30,7 +30,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     device = "Wallbox 3"
     entries.append(HycubeNumber(api, coordinator, device, 'wallbox3.minChargingPower', api.wallbox3.setMinChargingPower, 'wallbox3.phaseCount', 'Min. Charging Power'))
 
-    async_add_entities(entries)
+    async_add_entities(entries, update_before_add=True)
 
 
 class HycubeNumber(CoordinatorEntity, NumberEntity):

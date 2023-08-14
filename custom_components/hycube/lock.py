@@ -30,7 +30,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     device = "Wallbox 3"
     entries.append(HycubeLock(api, coordinator, device, 'wallbox3.lock', api.wallbox3.setLock, 'Charging Lock'))
 
-    async_add_entities(entries)
+    async_add_entities(entries, update_before_add=True)
 
 
 class HycubeLock(CoordinatorEntity, LockEntity):
