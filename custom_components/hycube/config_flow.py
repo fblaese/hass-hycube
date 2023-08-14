@@ -49,7 +49,7 @@ class HycubeOptionsFlowHandler(config_entries.OptionsFlow):
 	async def async_step_init(self, info) -> FlowResult:
 		"""Handle options flow."""
 		if info is not None:
-			return self.async_create_entry(title=info[CONF_NAME], data=info)
+			return self.async_create_entry(title="", data=info)
 
 		data_schema = vol.Schema(
 			{
@@ -61,7 +61,7 @@ class HycubeOptionsFlowHandler(config_entries.OptionsFlow):
 				): cv.positive_int
 			}
 		)
-		return self.async_show_form(step_id="user", data_schema=vol.Schema(
+		return self.async_show_form(step_id="init", data_schema=vol.Schema(
 				{
 					vol.Optional(CONF_SCAN_INTERVAL, default=self.config_entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)): cv.positive_int,
 				}
