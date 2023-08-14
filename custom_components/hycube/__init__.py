@@ -103,7 +103,7 @@ async def async_unload_entry(hass: core.HomeAssistant, entry: ConfigEntry):
 
 class ApiCoordinator(DataUpdateCoordinator):
     def __init__(self, hass: core, api: Hycube):
-        super().__init__(hass, _LOGGER, name="test", update_interval=timedelta(seconds=10))
+        super().__init__(hass, _LOGGER, name="test", update_interval=timedelta(seconds=5))
         self.api = api
 
     async def _async_update_data(self):
