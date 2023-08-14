@@ -264,10 +264,20 @@ class Hycube:
 
 	def requestStatus(self):
 		response = {}
-		try:
-			self.__queryStatusApi()
-		except (requests.exceptions.ConnectTimeout, requests.exceptions.ConnectionError):
-			return
+
+		# work around transient errors of the somewhat unreliable API
+		retries = 5
+		while True:
+			try:
+				self.__queryStatusApi()
+				break
+			except requests.exceptions.RequestException as e:
+				if retries > 0:
+					retries -= 1
+					time.sleep(0.2)
+					continue
+				else:
+					raise e
 
 		# TODO: complete info parsing
 		self.machine = self.__info.get('HYCUBE_MACHINE')
