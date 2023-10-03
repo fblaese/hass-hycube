@@ -215,6 +215,7 @@ class HycubeSolar:
 @dataclass
 class Hycube:
 	endpoint: str
+	session: requests.Session
 
 	machine: str
 	serial: str
@@ -237,26 +238,29 @@ class Hycube:
 		if (endpoint is None or endpoint == ''):
 			raise ValueError("endpoint must be specified")
 		self.endpoint = endpoint
+		self.session = requests.Session()
 
 	def __queryStatusApi(self):
 		start = time.time()
 
-		request = requests.get("http://%s/data_row/" % self.endpoint, timeout=1)
+		session = self.session
+
+		request = session.get("http://%s/data_row/" % self.endpoint, timeout=1)
 		self.__dataRow = request.json()
 
-		request = requests.get("http://%s/plantCheck/" % self.endpoint, timeout=1)
+		request = session.get("http://%s/plantCheck/" % self.endpoint, timeout=1)
 		self.__plantCheck = request.json()
 
-		request = requests.get("http://%s/info/" % self.endpoint, timeout=1)
+		request = session.get("http://%s/info/" % self.endpoint, timeout=1)
 		self.__info = request.json()
 
-		request = requests.get("http://%s/Wallbox/getSettings/" % self.endpoint, timeout=1)
+		request = session.get("http://%s/Wallbox/getSettings/" % self.endpoint, timeout=1)
 		self.__wallboxGetSettings = request.json()
 
-		request = requests.get("http://%s/auth/" % self.endpoint, timeout=1, headers={"Authorization": base64.b64encode(b'Basic hycube:hycube')})
+		request = session.get("http://%s/auth/" % self.endpoint, timeout=1, headers={"Authorization": base64.b64encode(b'Basic hycube:hycube')})
 		auth = request.content
 
-		request = requests.get("http://%s/get_values/" % self.endpoint, timeout=1, headers={"Authorization": auth})
+		request = session.get("http://%s/get_values/" % self.endpoint, timeout=1, headers={"Authorization": auth})
 		self.__getValues = request.json()
 
 		end = time.time()
